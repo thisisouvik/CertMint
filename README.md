@@ -9,7 +9,15 @@
 </p>
 
 <p align="center">
-  <strong>Live Production:</strong> TODO
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
+  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white" />
+  <img alt="Stellar" src="https://img.shields.io/badge/Stellar-111111?style=for-the-badge&logo=stellar&logoColor=white" />
+</p>
+
+<p align="center">
+  <strong>Live Production:</strong> <a href="https://cert-mint.vercel.app" target="_blank">https://cert-mint.vercel.app</a>
 </p>
 
 ## ✨ About The Project

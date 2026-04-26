@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fdf9f7;
+  --foreground: #1e1614;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), sans-serif;
+}
+
+.certmint-bg {
+  background-color: #fdf8f5;
+  background-image:
+    radial-gradient(circle at 6% 10%, rgba(249, 194, 167, 0.28), transparent 32%),
+    radial-gradient(circle at 95% 3%, rgba(241, 207, 186, 0.48), transparent 34%),
+    radial-gradient(circle at 50% 120%, rgba(236, 188, 160, 0.2), transparent 45%);
+}
+
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: fadeUp 0.7s ease forwards;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

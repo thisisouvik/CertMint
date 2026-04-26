@@ -42,8 +42,8 @@ impl NFTCertificateContract {
         cert_type: Symbol,
         title: String,
     ) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
-        admin.require_auth();
+        // Allow the minter to authorize their own mint transaction
+        to.require_auth();
 
         if env.storage().persistent().has(&DataKey::Owner(token_id)) {
             panic!("token already exists");
@@ -52,10 +52,10 @@ impl NFTCertificateContract {
         // Save Owner
         env.storage().persistent().set(&DataKey::Owner(token_id), &to);
 
-        // Save Certificate Data
+        // Save Certificate Data (issuer is the minter)
         let cert_data = CertificateData {
             token_id,
-            issuer: admin,
+            issuer: to.clone(),
             cert_type,
             title,
             issue_date: env.ledger().timestamp(),

@@ -13,7 +13,7 @@ interface AuthPageProps {
 
 export default async function AuthPage({ searchParams }: AuthPageProps) {
   const resolved = (await searchParams) ?? {};
-  const nextPath = typeof resolved.next === "string" && resolved.next.startsWith("/") ? resolved.next : "/mint";
+  const nextPath = typeof resolved.next === "string" && resolved.next.startsWith("/") ? resolved.next : "/dashboard";
 
   return (
     <main className="certmint-bg min-h-screen px-6 py-12 sm:px-10 lg:px-16">
@@ -23,7 +23,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
           Authenticate to mint certificates
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-[#5D5452] sm:text-base">
-          Minting is restricted. Sign in as an approved issuer to access the minting flow.
+          Sign in to access your minter dashboard. Minting unlocks after KYC verification is approved.
         </p>
 
         {resolved.error ? (
@@ -37,7 +37,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
         <div className="mt-8 grid gap-5 md:grid-cols-1">
           <article className="rounded-2xl border border-[#D6815D] bg-[#FFF8F4] p-6">
             <h2 className="font-[family-name:var(--font-display)] text-2xl text-[#241714]">Sign In</h2>
-            <p className="mt-2 text-sm text-[#665B57]">For approved issuers with existing accounts.</p>
+            <p className="mt-2 text-sm text-[#665B57]">For registered minters with existing accounts.</p>
             <form action={signInAction} className="mt-5 space-y-3">
               <input type="hidden" name="next" value={nextPath} />
               <label className="block text-sm font-medium text-[#2A1E1B]" htmlFor="signin-email">

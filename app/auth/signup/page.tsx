@@ -13,7 +13,7 @@ interface SignUpPageProps {
 
 export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const resolved = (await searchParams) ?? {};
-  const nextPath = typeof resolved.next === "string" && resolved.next.startsWith("/") ? resolved.next : "/mint";
+  const nextPath = typeof resolved.next === "string" && resolved.next.startsWith("/") ? resolved.next : "/dashboard";
 
   return (
     <main className="certmint-bg min-h-screen px-6 py-12 sm:px-10 lg:px-16">
@@ -23,7 +23,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
           Create your issuer account
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-[#5D5452] sm:text-base">
-          After creating your account, an admin must approve you before minting certificates.
+          After signup you will enter your dashboard. Minting stays locked until KYC verification is approved.
         </p>
 
         {resolved.error ? (
@@ -37,7 +37,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
         <div className="mt-8 grid gap-5 md:grid-cols-1">
           <article className="rounded-2xl border border-[#D6815D] bg-[#FFF8F4] p-6">
             <h2 className="font-[family-name:var(--font-display)] text-2xl text-[#241714]">Sign Up</h2>
-            <p className="mt-2 text-sm text-[#665B57]">Create issuer account. Admin approval is required before minting.</p>
+            <p className="mt-2 text-sm text-[#665B57]">Create minter account. KYC approval is required before minting.</p>
             <form action={signUpAction} className="mt-5 space-y-3">
               <input type="hidden" name="next" value={nextPath} />
               <label className="block text-sm font-medium text-[#2A1E1B]" htmlFor="signup-name">

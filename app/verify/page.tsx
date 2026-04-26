@@ -1,50 +1,115 @@
-const sampleInputs = [
-  "CM-2026-0A94-8D1E",
-  "f31f4a10d318de7d4a4f9595f6f21513cf727f9f0f2e745c96c639ceb4bd4a94",
-  "GC5D...VQPA",
-];
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
-export default function VerifyPage() {
+export default async function VerifyPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ searchType?: string; reference?: string }>;
+}) {
+  const resolvedParams = (await searchParams) ?? {};
+  const { searchType, reference } = resolvedParams;
+
+  let searchResult = null;
+  let hasSearched = false;
+
+  if (reference) {
+    hasSearched = true;
+    if (searchType === "wallet") {
+      redirect(`/collection/${reference}`);
+    } else {
+      const supabase = await createClient();
+      const tokenId = parseInt(reference, 10);
+      
+      if (!isNaN(tokenId)) {
+        const { data } = await supabase
+          .from("certificates")
+          .select("*")
+          .eq("token_id", tokenId)
+          .single();
+          
+        searchResult = data;
+      }
+    }
+  }
+
   return (
     <main className="certmint-bg min-h-screen px-6 py-12 sm:px-10 lg:px-16">
       <section className="mx-auto max-w-3xl rounded-[2rem] border border-[#EBD8CF] bg-white/90 p-7 shadow-[0_24px_52px_-34px_rgba(143,88,59,0.5)] backdrop-blur sm:p-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C55B34]">CertMint verifier</p>
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-[#1A1211] sm:text-5xl">
-          Verify a certificate on Stellar
+        <h1 className="font-[family-name:var(--font-display)] text-4xl leading-tight text-[#1A1211] sm:text-5xl">
+          Verify a Certificate
         </h1>
-        <p className="mt-4 text-sm leading-7 text-[#5D5452] sm:text-base">
-          Enter the certificate ID, transaction hash, or wallet address attached to a CertMint NFT certificate.
-        </p>
 
-        <form className="mt-8 space-y-4" action="#" method="get">
-          <label className="block text-sm font-semibold text-[#2A1E1B]" htmlFor="reference">
-            Certificate reference
-          </label>
-          <input
-            id="reference"
-            name="reference"
-            type="text"
-            placeholder="Paste certificate ID / transaction hash / wallet"
-            className="w-full rounded-xl border border-[#DFC8BC] bg-[#FFFCFA] px-4 py-3 text-sm text-[#2D2220] outline-none transition placeholder:text-[#9A8A84] focus:border-[#C55B34] focus:ring-2 focus:ring-[#F6D5C8]"
-          />
-          <button
-            type="submit"
-            className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#C85F37] px-7 text-sm font-semibold tracking-wide text-[#FFF8F4] transition hover:bg-[#AD4E2A]"
-          >
-            Check authenticity
-          </button>
+        <form className="mt-8 space-y-6" action="/verify" method="get">
+          <div>
+            <span className="block text-sm font-semibold text-[#2A1E1B] mb-3">
+              Search by:
+            </span>
+            <div className="flex flex-wrap items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-[#5D5452]">
+                <input type="radio" name="searchType" value="tokenId" className="accent-[#C55B34]" defaultChecked={searchType !== "wallet"} />
+                <span>Token ID</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-[#5D5452]">
+                <input type="radio" name="searchType" value="wallet" className="accent-[#C55B34]" defaultChecked={searchType === "wallet"} />
+                <span>Wallet</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className="sr-only" htmlFor="reference">
+              Certificate reference
+            </label>
+            <input
+              id="reference"
+              name="reference"
+              type="text"
+              placeholder="Enter Token ID or Wallet address..."
+              className="w-full rounded-xl border border-[#DFC8BC] bg-[#FFFCFA] px-4 py-3 text-sm text-[#2D2220] outline-none transition placeholder:text-[#9A8A84] focus:border-[#C55B34] focus:ring-2 focus:ring-[#F6D5C8]"
+              defaultValue={reference || ""}
+              required
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#C85F37] px-8 text-sm font-semibold tracking-wide text-[#FFF8F4] transition hover:bg-[#AD4E2A]"
+            >
+              Verify 🔍
+            </button>
+          </div>
         </form>
 
-        <div className="mt-10 rounded-2xl border border-[#EFDED5] bg-[#FFF9F5] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A65A39]">Accepted formats</p>
-          <ul className="mt-3 space-y-2 text-sm text-[#5A504D]">
-            {sampleInputs.map((value) => (
-              <li key={value} className="rounded-lg bg-white px-3 py-2 font-mono text-xs sm:text-sm">
-                {value}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {hasSearched && (
+          <div className="mt-10">
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-sm font-semibold text-[#866E65] uppercase tracking-[0.1em]">Result</span>
+              <div className="h-px flex-1 bg-[#EFDED5]"></div>
+            </div>
+
+            {searchResult ? (
+              <article className={`rounded-2xl border ${searchResult.is_revoked ? 'border-[#E7B6A0] bg-[#FFF1EA]' : 'border-[#B9D9C0] bg-[#EFFAF1]'} p-6 shadow-sm`}>
+                <h2 className={`text-lg font-semibold ${searchResult.is_revoked ? 'text-[#8C3F1E]' : 'text-[#1A6A31]'} flex items-center gap-2`}>
+                  <span>{searchResult.is_revoked ? '❌' : '✅'}</span> {searchResult.is_revoked ? 'CERTIFICATE REVOKED' : 'CERTIFICATE VALID'}
+                </h2>
+                
+                <div className="mt-5 space-y-2 text-sm text-[#2D2220]">
+                  <p className="font-semibold text-base mb-4">{searchResult.title}</p>
+                  <p><span className="text-[#6B5A54]">Type:</span> <span className="capitalize">{searchResult.cert_type?.toLowerCase()}</span></p>
+                  <p><span className="text-[#6B5A54]">Owner:</span> {searchResult.owner_wallet}</p>
+                  <p><span className="text-[#6B5A54]">Issued:</span> {new Date(searchResult.created_at).toLocaleDateString()}</p>
+                  <p><span className="text-[#6B5A54]">Contract ID:</span> {searchResult.contract_id || 'Pending On-Chain'}</p>
+                </div>
+              </article>
+            ) : (
+              <article className="rounded-2xl border border-[#E9D6CD] bg-[#FFF8F4] p-6 shadow-sm">
+                <p className="text-[#8C3F1E] font-semibold">Certificate not found</p>
+                <p className="text-sm text-[#6B5A54] mt-2">No certificate exists with the provided Token ID.</p>
+              </article>
+            )}
+          </div>
+        )}
       </section>
     </main>
   );

@@ -2,6 +2,12 @@ import { CertificateExplorer } from "@/components/landing/certificate-explorer";
 import { LandingFooter } from "@/components/landing/footer";
 import { Hero } from "@/components/landing/hero";
 import { StatsBar } from "@/components/landing/stats-bar";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { Capabilities } from "@/components/landing/capabilities";
+import { TrustStrip } from "@/components/landing/trust-strip";
+import { CtaBanner } from "@/components/landing/cta-banner";
+import { Testimonials } from "@/components/landing/testimonials";
+import { FaqSection } from "@/components/landing/faq";
 import Link from "next/link";
 
 export default function Home() {
@@ -12,7 +18,7 @@ export default function Home() {
           <p className="font-[family-name:var(--font-display)] text-xl text-[#241816]">CertMint</p>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
-              href="/auth?next=/mint"
+              href="/auth?next=/dashboard"
               className="inline-flex min-h-10 items-center justify-center rounded-full border border-[#C75F38] bg-[#C75F38] px-4 text-[11px] font-semibold uppercase tracking-[0.13em] text-[#FFF6F1] transition hover:bg-[#AF4E2A]"
             >
               Sign In
@@ -30,8 +36,14 @@ export default function Home() {
 
       <main>
         <Hero />
+        <TrustStrip />
+        <HowItWorks />
         <StatsBar />
+        <Capabilities />
+        <Testimonials />
         <CertificateExplorer />
+        <FaqSection />
+        <CtaBanner />
       </main>
 
       <LandingFooter />

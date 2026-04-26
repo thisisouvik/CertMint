@@ -14,7 +14,7 @@ export function Hero() {
             </p>
             <div className="mt-9 flex flex-wrap gap-4">
               <a
-                href="/auth?next=/mint"
+                href="/auth?next=/dashboard"
                 className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#D46339] px-7 text-sm font-semibold tracking-wide text-[#FFF8F4] transition hover:bg-[#B94D26]"
               >
                 Mint Certificate

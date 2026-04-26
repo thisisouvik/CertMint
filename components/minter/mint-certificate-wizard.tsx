@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { isAllowed, setAllowed, requestAccess, signTransaction } from "@stellar/freighter-api";
-import { Horizon, Networks, TransactionBuilder, Contract, nativeToScVal } from "@stellar/stellar-sdk";
+import { Networks, TransactionBuilder, Contract, nativeToScVal } from "@stellar/stellar-sdk";
 
 type CertType = "HACKATHON" | "COURSE" | "EVENT" | "ACHIEVEMENT";
 type MintStep = 1 | 2 | 3;
@@ -13,7 +13,6 @@ interface FormState {
   title: string;
   description: string;
   certType: CertType;
-  recipientWallet: string;
   badgeIcon: string;
   cardTheme: CardTheme;
 }
@@ -52,7 +51,6 @@ function MintCertificateWizard() {
     title: "Best DeFi Project",
     description: "Awarded for building an innovative decentralized finance protocol.",
     certType: "HACKATHON",
-    recipientWallet: "G...XYZ",
     badgeIcon: "🏆",
     cardTheme: "sunrise",
   });
@@ -89,19 +87,8 @@ function MintCertificateWizard() {
 
   function validateStepOne() {
     const nextErrors: Partial<Record<keyof FormState, string>> = {};
-
-    if (!form.title.trim()) {
-      nextErrors.title = "Title is required.";
-    }
-
-    if (!form.description.trim()) {
-      nextErrors.description = "Description is required.";
-    }
-
-    if (!form.recipientWallet.trim()) {
-      nextErrors.recipientWallet = "Recipient wallet is required.";
-    }
-
+    if (!form.title.trim()) nextErrors.title = "Title is required.";
+    if (!form.description.trim()) nextErrors.description = "Description is required.";
     setFieldErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   }
@@ -142,53 +129,100 @@ function MintCertificateWizard() {
     setErrorMessage(null);
 
     try {
-      // Setup RPC and Network
-      const server = new Horizon.Server("https://horizon-testnet.stellar.org");
+      // Use Soroban RPC to simulate + build a properly assembled tx
+      const { rpc: SorobanRpc, Transaction } = await import("@stellar/stellar-sdk");
+      const sorobanServer = new SorobanRpc.Server(
+        process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || "https://soroban-testnet.stellar.org"
+      );
+
       const contractId = process.env.NEXT_PUBLIC_NFT_CONTRACT_ID || "PLACEHOLDER";
       if (contractId === "PLACEHOLDER") throw new Error("NFT Contract ID not configured.");
 
-      const sourceAccount = await server.loadAccount(walletAddress!);
-      const generatedTokenId = Math.floor(100000 + Math.random() * 900000); // 6 digit ID
-      
+      // Load account via Soroban RPC
+      const sourceAccount = await sorobanServer.getAccount(walletAddress!);
+      const generatedTokenId = Math.floor(100000 + Math.random() * 900000);
+
       const contract = new Contract(contractId);
-      const operation = contract.call("mint",
-        nativeToScVal(form.recipientWallet, { type: "address" }),
+      const operation = contract.call(
+        "mint",
+        nativeToScVal(walletAddress, { type: "address" }),
         nativeToScVal(generatedTokenId, { type: "u64" }),
         nativeToScVal(form.certType, { type: "symbol" }),
         nativeToScVal(form.title, { type: "string" })
       );
 
       const tx = new TransactionBuilder(sourceAccount, {
-        fee: "100",
+        fee: "300",
         networkPassphrase: Networks.TESTNET,
       })
-      .addOperation(operation)
-      .setTimeout(30)
-      .build();
+        .addOperation(operation)
+        .setTimeout(60)
+        .build();
 
-      await signTransaction(tx.toXDR(), { networkPassphrase: Networks.TESTNET });
+      // Simulate to get the footprint (required for Soroban)
+      const simulation = await sorobanServer.simulateTransaction(tx);
+      if (SorobanRpc.Api.isSimulationError(simulation)) {
+        throw new Error(`Contract simulation failed: ${simulation.error}`);
+      }
+
+      // Assemble the final transaction with soroban data
+      const preparedTx = SorobanRpc.assembleTransaction(tx, simulation).build();
+
+      // Sign with Freighter
+      const signResult = await signTransaction(preparedTx.toXDR(), {
+        networkPassphrase: Networks.TESTNET,
+      });
+      
+      if (typeof signResult === "object" && "error" in signResult) {
+        throw new Error((signResult as { error?: string }).error || "User declined to sign the transaction.");
+      }
+      
+      const signedXdr =
+        typeof signResult === "string"
+          ? signResult
+          : (signResult as { signedTxXdr: string }).signedTxXdr;
+
       setTxState("submitted");
 
-      // Mock the submission to horizon, as Freighter doesn't submit directly and horizon 
-      // sometimes fails without proper funding setup in tests
-      const fakeHash = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
-      
-      await new Promise((r) => setTimeout(r, 1500));
-      
-      // Save to Supabase
+      // Submit to Stellar network
+      const submitResponse = await sorobanServer.sendTransaction(
+        new Transaction(signedXdr, Networks.TESTNET)
+      );
+
+      if (submitResponse.status === "ERROR") {
+        throw new Error(`On-chain submission failed: ${String(submitResponse.errorResult)}`);
+      }
+
+      // Poll for confirmation (up to 15s)
+      const realHash = submitResponse.hash;
+      let attempts = 0;
+      while (attempts < 8) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const poll = await sorobanServer.getTransaction(realHash);
+        if (poll.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) break;
+        if (poll.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
+          let errorMsg = "Transaction failed on-chain.";
+          if (poll.resultMetaXdr) {
+            errorMsg += " Check Stellar Explorer for detailed contract execution error.";
+          }
+          throw new Error(errorMsg);
+        }
+        attempts++;
+      }
+
+      // Save to Supabase with real on-chain hash
       const { saveMintedCertificateAction } = await import("@/app/(minter)/mint/actions");
       await saveMintedCertificateAction({
         tokenId: generatedTokenId,
-        recipientWallet: form.recipientWallet,
         certType: form.certType,
         title: form.title,
         description: form.description,
-        txHash: fakeHash,
+        txHash: realHash,
         contractId,
       });
 
       setTokenId(generatedTokenId);
-      setTxHash(fakeHash);
+      setTxHash(realHash);
       setTxState("success");
 
     } catch (err: unknown) {
@@ -256,20 +290,6 @@ function MintCertificateWizard() {
                     <option value="EVENT">Event</option>
                     <option value="ACHIEVEMENT">Achievement</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-[#2C211D]" htmlFor="recipientWallet">
-                    Recipient*
-                  </label>
-                  <input
-                    id="recipientWallet"
-                    value={form.recipientWallet}
-                    onChange={(event) => updateForm("recipientWallet", event.target.value)}
-                    placeholder="G... wallet"
-                    className="mt-2 w-full rounded-xl border border-[#DFC8BC] bg-white px-4 py-3 text-sm text-[#2D2220] outline-none focus:border-[#C55B34] focus:ring-2 focus:ring-[#F6D5C8]"
-                  />
-                  {fieldErrors.recipientWallet ? <p className="mt-1 text-xs text-[#A54527]">{fieldErrors.recipientWallet}</p> : null}
                 </div>
               </div>
             ) : null}
@@ -354,29 +374,44 @@ function MintCertificateWizard() {
                   </button>
                 </div>
 
-                <div className="rounded-xl border border-[#E8D4CA] bg-white p-4 text-sm text-[#4E4340]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8A7165]">TX Status</p>
-                  <div className="mt-2 space-y-2">
-                    <p className={txState === "waiting" ? "text-[#AA4C2F]" : "text-[#6F625E]"}>⏳ Waiting for Freighter approval...</p>
-                    <p className={txState === "submitted" ? "text-[#AA4C2F]" : "text-[#6F625E]"}>🔄 Transaction submitted...</p>
-                    <p className={txState === "success" ? "text-[#1A6A31]" : "text-[#6F625E]"}>
-                      ✅ Minted! Token ID: {tokenId ? `#${tokenId}` : "-"}
-                    </p>
-                    <p className="text-[#6F625E]">
-                      TX: {txHash ? `${txHash}...` : "-"}{" "}
-                      {txHash ? (
-                        <a
-                          href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-semibold text-[#A54527] underline-offset-2 hover:underline"
-                        >
-                          View on Stellar Explorer
+                {/* Success Panel */}
+                {txState === "success" && tokenId && txHash ? (
+                  <div className="rounded-2xl border-2 border-[#B9D9C0] bg-[#EFFAF1] p-5">
+                    <p className="font-semibold text-[#1A6A31] text-base">🎉 Certificate Minted!</p>
+                    <p className="mt-1 text-xs text-[#4A7A55]">Share these credentials with the recipient to verify their certificate.</p>
+                    <div className="mt-4 space-y-3">
+                      <div className="rounded-xl border border-[#B9D9C0] bg-white px-4 py-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#4A7A55]">Certificate / Verification ID</p>
+                        <p className="mt-1 font-mono text-xl font-bold text-[#1A1211] tracking-wider">#{tokenId}</p>
+                      </div>
+                      <div className="rounded-xl border border-[#B9D9C0] bg-white px-4 py-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#4A7A55]">Transaction ID</p>
+                        <p className="mt-1 font-mono text-xs text-[#2D2220] break-all">{txHash}</p>
+                        <a href={`https://stellar.expert/explorer/testnet/tx/${txHash}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-[#C55B34] underline-offset-2 hover:underline">
+                          View on Stellar Explorer ↗
                         </a>
-                      ) : null}
-                    </p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={resetFlow} className="mt-4 w-full rounded-xl border border-[#C55B34] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-[#C55B34] transition hover:bg-[#FFF1EA]">
+                      Mint Another Certificate
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-xl border border-[#E8D4CA] bg-white p-4 text-sm text-[#4E4340]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8A7165]">TX Status</p>
+                    <div className="mt-2 space-y-2">
+                      <p className={txState === "waiting" ? "text-[#AA4C2F] font-semibold" : "text-[#6F625E]"}>
+                        {txState === "waiting" ? "⏳ Waiting for Freighter approval..." : "◦ Waiting for Freighter..."}
+                      </p>
+                      <p className={txState === "submitted" ? "text-[#AA4C2F] font-semibold" : "text-[#6F625E]"}>
+                        {txState === "submitted" ? "🔄 Saving to blockchain..." : "◦ Submitting transaction..."}
+                      </p>
+                      {txState === "error" && errorMessage && (
+                        <p className="text-[#A54527] font-semibold">❌ {errorMessage}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : null}
 
@@ -409,11 +444,9 @@ function MintCertificateWizard() {
               <p className="mt-2 text-sm text-[#4F423E]">{form.description || "Certificate description"}</p>
 
               <div className="mt-5 space-y-1 text-sm text-[#4A3E3A]">
-                <p>
-                  Issued to: <span className="font-semibold">{form.recipientWallet || "G... wallet"}</span>
-                </p>
                 <p>{issuedDate}</p>
                 <p className="text-xs uppercase tracking-[0.12em] text-[#7E6A62]">Type: {certTypeLabels[form.certType]}</p>
+                <p className="text-xs text-[#9E8880]">Verification ID will be generated on mint</p>
               </div>
             </article>
 

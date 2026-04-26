@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { isAllowed, setAllowed, requestAccess, signTransaction } from "@stellar/freighter-api";
+import { isAllowed, requestAccess, signTransaction } from "@stellar/freighter-api";
 import { Networks, TransactionBuilder, Contract, nativeToScVal } from "@stellar/stellar-sdk";
 
 type CertType = "HACKATHON" | "COURSE" | "EVENT" | "ACHIEVEMENT";

@@ -31,11 +31,12 @@ export default async function AdminWalletsPage({ searchParams }: WalletsPageProp
       ? resolved.status
       : "pending";
 
-  const { supabase } = await requireAdminUser();
+  const { supabase, effectiveEmail } = await requireAdminUser();
 
   let usersQuery = supabase
     .from("user_profiles")
     .select("id, email, full_name, role, approval_status, created_at")
+    .neq("email", effectiveEmail) // Exclude the admin user themselves
     .order("created_at", { ascending: false });
 
   if (selectedStatus !== "all") {

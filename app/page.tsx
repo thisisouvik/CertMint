@@ -13,8 +13,8 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="certmint-bg min-h-screen">
-      <header className="px-6 pt-6 sm:px-10 sm:pt-8 lg:px-16">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between rounded-full border border-[#EBD7CC] bg-white/75 px-4 py-3 backdrop-blur sm:px-6">
+      <header className="px-4 pt-4 sm:px-10 sm:pt-8 lg:px-16">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-0 rounded-[1.5rem] sm:rounded-full border border-[#EBD7CC] bg-white/75 px-4 py-3 backdrop-blur sm:px-6">
           <p className="font-[family-name:var(--font-display)] text-xl text-[#241816]">CertMint</p>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link

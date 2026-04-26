@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function saveMintedCertificateAction(payload: {
   tokenId: number;
-  recipientWallet: string;
   certType: string;
   title: string;
   description: string;
@@ -15,17 +14,13 @@ export async function saveMintedCertificateAction(payload: {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    throw new Error("Unauthorized");
+    throw new Error("Unauthorized: please sign in.");
   }
 
-  // Assuming minter's wallet is not explicitly tracked in DB for this, 
-  // but we can use their email or just mock the issuer wallet as their user.id or predefined.
-  // We'll set issuer_wallet to "SYSTEM" or maybe we should fetch it.
-  
   const { error } = await supabase.from("certificates").insert({
     token_id: payload.tokenId,
-    owner_wallet: payload.recipientWallet,
-    issuer_wallet: user.email || "UNKNOWN",
+    owner_wallet: "",          // No recipient wallet — recipient verifies by ID/TX hash
+    issuer_wallet: user.email ?? "UNKNOWN",
     title: payload.title,
     description: payload.description,
     cert_type: payload.certType,
@@ -35,17 +30,22 @@ export async function saveMintedCertificateAction(payload: {
   });
 
   if (error) {
-    console.error("Failed to save certificate:", error);
-    throw new Error("Failed to save certificate to database");
+    // Throw the real Supabase error message so it surfaces in the UI
+    console.error("Supabase insert error:", error);
+    throw new Error(`Database error: ${error.message} (code: ${error.code})`);
   }
 
-  // Optionally save transaction to transactions table
-  await supabase.from("transactions").insert({
+  const { error: txError } = await supabase.from("transactions").insert({
     tx_hash: payload.txHash,
     action: "MINT_CERTIFICATE",
-    wallet_address: user.email || "UNKNOWN",
+    wallet: user.email ?? "UNKNOWN",
     status: "success",
   });
 
-  return { success: true };
+  if (txError) {
+    // Non-fatal — cert was saved, just log this
+    console.warn("Failed to save transaction log:", txError.message);
+  }
+
+  return { success: true, tokenId: payload.tokenId, txHash: payload.txHash };
 }

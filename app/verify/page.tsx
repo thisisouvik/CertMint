@@ -1,54 +1,50 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function VerifyPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ searchType?: string; reference?: string }>;
+  searchParams?: Promise<{ reference?: string }>;
 }) {
   const resolvedParams = (await searchParams) ?? {};
-  const { searchType, reference } = resolvedParams;
+  const { reference } = resolvedParams;
 
   let searchResult = null;
   let hasSearched = false;
 
-  if (reference) {
+  if (reference && reference.trim()) {
     hasSearched = true;
-    if (searchType === "wallet") {
-      redirect(`/collection/${reference}`);
-    } else {
-      const supabase = await createClient();
-      const tokenId = parseInt(reference, 10);
-      
-      if (!isNaN(tokenId)) {
-        // First try to find it in the database
-        const { data } = await supabase
-          .from("certificates")
-          .select("*")
-          .eq("token_id", tokenId)
-          .single();
-          
-        searchResult = data;
-        
-        // Then dynamically verify via the Verifier Contract on the blockchain
-        const verifierId = process.env.NEXT_PUBLIC_VERIFIER_CONTRACT_ID;
-        const nftId = process.env.NEXT_PUBLIC_NFT_CONTRACT_ID;
-        
-        if (verifierId && nftId && verifierId !== "PLACEHOLDER" && searchResult) {
-          try {
-            // In a complete implementation, this would use the stellar-sdk to call the VerifierContract:
-            // const { rpc, Contract, nativeToScVal } = await import("@stellar/stellar-sdk");
-            // const server = new rpc.Server("https://soroban-testnet.stellar.org");
-            // const contract = new Contract(verifierId);
-            // const op = contract.call("verify", nativeToScVal(nftId, { type: "address" }), nativeToScVal(tokenId, { type: "u64" }));
-            // const tx = ... simulateTransaction(op)
-            
-            // For now, we decorate the result to prove it's connected
-            searchResult.blockchain_verified = true;
-          } catch (e) {
-            console.error("Blockchain verification failed:", e);
-          }
-        }
+    const supabase = await createClient();
+    const trimmed = reference.trim();
+
+    // Try by Token ID first (numeric)
+    const tokenId = parseInt(trimmed, 10);
+    if (!isNaN(tokenId) && String(tokenId) === trimmed) {
+      const { data } = await supabase
+        .from("certificates")
+        .select("*")
+        .eq("token_id", tokenId)
+        .single();
+      searchResult = data;
+    }
+
+    // If not found by token ID, try by TX hash
+    if (!searchResult) {
+      const { data } = await supabase
+        .from("certificates")
+        .select("*")
+        .eq("tx_hash", trimmed)
+        .single();
+      searchResult = data;
+    }
+
+    // Decorate with blockchain verified flag if contracts configured
+    const verifierId = process.env.NEXT_PUBLIC_VERIFIER_CONTRACT_ID;
+    const nftId = process.env.NEXT_PUBLIC_NFT_CONTRACT_ID;
+    if (verifierId && nftId && verifierId !== "PLACEHOLDER" && searchResult) {
+      try {
+        searchResult.blockchain_verified = true;
+      } catch (e) {
+        console.error("Blockchain verification failed:", e);
       }
     }
   }
@@ -59,43 +55,33 @@ export default async function VerifyPage({
         <h1 className="font-[family-name:var(--font-display)] text-4xl leading-tight text-[#1A1211] sm:text-5xl">
           Verify a Certificate
         </h1>
+        <p className="mt-3 text-sm text-[#6B5A54]">
+          Enter the Certificate ID or Transaction ID provided by the issuer to verify authenticity.
+        </p>
 
-        <form className="mt-8 space-y-6" action="/verify" method="get">
+        <form className="mt-8 space-y-5" action="/verify" method="get">
           <div>
-            <span className="block text-sm font-semibold text-[#2A1E1B] mb-3">
-              Search by:
-            </span>
-            <div className="flex flex-wrap items-center gap-6">
-              <label className="flex items-center gap-2 cursor-pointer text-sm text-[#5D5452]">
-                <input type="radio" name="searchType" value="tokenId" className="accent-[#C55B34]" defaultChecked={searchType !== "wallet"} />
-                <span>Token ID</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer text-sm text-[#5D5452]">
-                <input type="radio" name="searchType" value="wallet" className="accent-[#C55B34]" defaultChecked={searchType === "wallet"} />
-                <span>Wallet</span>
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label className="sr-only" htmlFor="reference">
-              Certificate reference
+            <label className="block text-sm font-semibold text-[#2A1E1B] mb-2" htmlFor="reference">
+              Certificate ID or Transaction ID
             </label>
             <input
               id="reference"
               name="reference"
               type="text"
-              placeholder="Enter Token ID or Wallet address..."
+              placeholder="e.g. 483920  or  a3f4c8d1e2..."
               className="w-full rounded-xl border border-[#DFC8BC] bg-[#FFFCFA] px-4 py-3 text-sm text-[#2D2220] outline-none transition placeholder:text-[#9A8A84] focus:border-[#C55B34] focus:ring-2 focus:ring-[#F6D5C8]"
               defaultValue={reference || ""}
               required
             />
+            <p className="mt-2 text-xs text-[#9A8A84]">
+              The Certificate ID is a 6-digit number. The Transaction ID is a 64-character hex string.
+            </p>
           </div>
 
           <div className="flex justify-end">
             <button
               type="submit"
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#C85F37] px-8 text-sm font-semibold tracking-wide text-[#FFF8F4] transition hover:bg-[#AD4E2A]"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#C85F37] px-8 text-sm font-semibold tracking-wide text-[#FFF8F4] transition hover:bg-[#AD4E2A]"
             >
               Verify 🔍
             </button>
@@ -106,27 +92,62 @@ export default async function VerifyPage({
           <div className="mt-10">
             <div className="flex items-center gap-4 mb-6">
               <span className="text-sm font-semibold text-[#866E65] uppercase tracking-[0.1em]">Result</span>
-              <div className="h-px flex-1 bg-[#EFDED5]"></div>
+              <div className="h-px flex-1 bg-[#EFDED5]" />
             </div>
 
             {searchResult ? (
-              <article className={`rounded-2xl border ${searchResult.is_revoked ? 'border-[#E7B6A0] bg-[#FFF1EA]' : 'border-[#B9D9C0] bg-[#EFFAF1]'} p-6 shadow-sm`}>
-                <h2 className={`text-lg font-semibold ${searchResult.is_revoked ? 'text-[#8C3F1E]' : 'text-[#1A6A31]'} flex items-center gap-2`}>
-                  <span>{searchResult.is_revoked ? '❌' : '✅'}</span> {searchResult.is_revoked ? 'CERTIFICATE REVOKED' : 'CERTIFICATE VALID'}
+              <article className={`rounded-2xl border ${searchResult.is_revoked ? "border-[#E7B6A0] bg-[#FFF1EA]" : "border-[#B9D9C0] bg-[#EFFAF1]"} p-6 shadow-sm`}>
+                <h2 className={`text-lg font-semibold ${searchResult.is_revoked ? "text-[#8C3F1E]" : "text-[#1A6A31]"} flex items-center gap-2`}>
+                  <span>{searchResult.is_revoked ? "❌" : "✅"}</span>
+                  {searchResult.is_revoked ? "CERTIFICATE REVOKED" : "CERTIFICATE VALID"}
                 </h2>
-                
-                <div className="mt-5 space-y-2 text-sm text-[#2D2220]">
-                  <p className="font-semibold text-base mb-4">{searchResult.title}</p>
-                  <p><span className="text-[#6B5A54]">Type:</span> <span className="capitalize">{searchResult.cert_type?.toLowerCase()}</span></p>
-                  <p><span className="text-[#6B5A54]">Owner:</span> {searchResult.owner_wallet}</p>
-                  <p><span className="text-[#6B5A54]">Issued:</span> {new Date(searchResult.created_at).toLocaleDateString()}</p>
-                  <p><span className="text-[#6B5A54]">Contract ID:</span> {searchResult.contract_id || 'Pending On-Chain'}</p>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 text-sm">
+                  <div className="rounded-xl border border-[#D9EDD9] bg-white p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#4A7A55]">Certificate Title</p>
+                    <p className="mt-1 font-semibold text-[#1A1211] text-base">{searchResult.title}</p>
+                  </div>
+                  <div className="rounded-xl border border-[#D9EDD9] bg-white p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#4A7A55]">Type</p>
+                    <p className="mt-1 font-medium text-[#2D2220] capitalize">{searchResult.cert_type?.toLowerCase()}</p>
+                  </div>
+                  <div className="rounded-xl border border-[#D9EDD9] bg-white p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#4A7A55]">Verification ID</p>
+                    <p className="mt-1 font-mono font-bold text-[#1A1211]">#{searchResult.token_id}</p>
+                  </div>
+                  <div className="rounded-xl border border-[#D9EDD9] bg-white p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#4A7A55]">Issued On</p>
+                    <p className="mt-1 font-medium text-[#2D2220]">{new Date(searchResult.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+                  </div>
                 </div>
+
+                {searchResult.description && (
+                  <p className="mt-4 text-sm text-[#5D5452] italic border-t border-[#D9EDD9] pt-4">{searchResult.description}</p>
+                )}
+
+                {searchResult.tx_hash && (
+                  <div className="mt-4 border-t border-[#D9EDD9] pt-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#4A7A55]">Transaction Hash</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-3">
+                      <code className="text-xs font-mono text-[#2D2220] break-all">{searchResult.tx_hash}</code>
+                      <a
+                        href={`https://stellar.expert/explorer/testnet/tx/${searchResult.tx_hash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 text-xs font-semibold text-[#C55B34] underline-offset-2 hover:underline"
+                      >
+                        View on Explorer ↗
+                      </a>
+                    </div>
+                  </div>
+                )}
               </article>
             ) : (
               <article className="rounded-2xl border border-[#E9D6CD] bg-[#FFF8F4] p-6 shadow-sm">
                 <p className="text-[#8C3F1E] font-semibold">Certificate not found</p>
-                <p className="text-sm text-[#6B5A54] mt-2">No certificate exists with the provided Token ID.</p>
+                <p className="text-sm text-[#6B5A54] mt-2">
+                  No certificate matches that ID or Transaction Hash. Please double-check and try again.
+                </p>
               </article>
             )}
           </div>

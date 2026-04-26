@@ -1,13 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 function sanitizeNextPath(rawNext: FormDataEntryValue | null): string {
-  const nextPath = typeof rawNext === "string" && rawNext.startsWith("/") ? rawNext : "/mint";
+  const nextPath = typeof rawNext === "string" && rawNext.startsWith("/") ? rawNext : "/dashboard";
 
   if (nextPath.startsWith("//")) {
-    return "/mint";
+    return "/dashboard";
   }
 
   return nextPath;
@@ -131,14 +132,30 @@ export async function signUpAction(formData: FormData) {
         }),
       );
     }
+
+    // Ensure new users can sign in immediately even if email confirmation is enabled.
+    try {
+      const adminClient = createAdminClient();
+      await adminClient.auth.admin.updateUserById(data.user.id, {
+        email_confirm: true,
+      });
+    } catch {
+      // Fall through. If admin confirm fails, regular sign-in handling below will surface any issue.
+    }
   }
 
-  redirect(
-    buildSignInRedirect({
-      next: nextPath,
-      success: "Account created. Wait for admin approval, then sign in.",
-    }),
-  );
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (signInError) {
+    redirect(
+      buildSignUpRedirect({
+        next: nextPath,
+        error: signInError.message,
+      }),
+    );
+  }
+
+  redirect(`${nextPath}?success=${encodeURIComponent("Account created. Your KYC is pending review.")}`);
 }
 
 export async function signOutAction() {

@@ -41,7 +41,7 @@ export function Testimonials() {
                 ))}
               </div>
               <p className="text-[#5D5553] text-sm leading-relaxed mb-6">
-                "{testimonial.quote}"
+                &ldquo;{testimonial.quote}&rdquo;
               </p>
               <div className="flex items-center gap-4 mt-auto">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFF7F1] text-sm font-semibold text-[#D46339]">

@@ -113,7 +113,7 @@ export default async function ManageMintedPage() {
             </div>
           ) : (
             <p className="mt-4 rounded-xl border border-[#E9D6CD] bg-[#FFF8F4] p-6 text-sm text-[#5D5452]">
-              You haven't issued any certificates yet.
+              You haven&apos;t issued any certificates yet.
             </p>
           )}
         </div>

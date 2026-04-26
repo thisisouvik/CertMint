@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { featuredCertificates } from "@/lib/content/landing";
 
 export function CertificateGallery() {
@@ -6,12 +7,12 @@ export function CertificateGallery() {
       <div className="mx-auto max-w-6xl rounded-[2rem] border border-[#E8D5CC] bg-white/90 p-6 sm:p-8">
         <div className="flex items-center justify-between gap-4">
           <h2 className="font-[family-name:var(--font-display)] text-3xl text-[#1D1412]">Certificate Gallery</h2>
-          <a
+          <Link
             href="/collection/demo-wallet"
             className="rounded-full border border-[#D4B9AB] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#3C2C28] transition hover:bg-[#FFF7F2]"
           >
             View Collection
-          </a>
+          </Link>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">

@@ -89,12 +89,12 @@ export default async function CertificateDetailPage({ params }: { params: Promis
             </div>
             <div className="flex items-center gap-6 rounded-2xl border border-[#EAD8CF] bg-[#FFFBF9] p-5">
               <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl bg-white border border-[#EBD8CF]">
-                {/* Mock QR Code */}
-                <div className="grid grid-cols-5 grid-rows-5 gap-0.5 p-2 w-full h-full">
-                  {[...Array(25)].map((_, i) => (
-                    <div key={i} className={`bg-[#2D2220] ${Math.random() > 0.5 ? 'opacity-100' : 'opacity-0'}`}></div>
-                  ))}
-                </div>
+              {/* Static QR-like pattern — stable across renders */}
+              <div className="grid grid-cols-5 grid-rows-5 gap-0.5 p-2 w-full h-full">
+                {[1,0,1,1,0,0,1,0,1,1,1,1,0,0,1,0,1,1,0,1,1,0,1,0,1].map((on, i) => (
+                  <div key={i} className={`bg-[#2D2220] ${on ? "opacity-100" : "opacity-0"}`}></div>
+                ))}
+              </div>
               </div>
               <div>
                 <p className="text-sm font-semibold text-[#2D2220]">Scan to verify this</p>

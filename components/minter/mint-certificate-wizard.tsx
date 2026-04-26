@@ -1,7 +1,8 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { isAllowed, setAllowed, requestAccess, signTransaction } from "@stellar/freighter-api";
-import { Horizon, Keypair, Networks, TransactionBuilder, Contract, nativeToScVal } from "@stellar/stellar-sdk";
+import { Horizon, Networks, TransactionBuilder, Contract, nativeToScVal } from "@stellar/stellar-sdk";
 
 type CertType = "HACKATHON" | "COURSE" | "EVENT" | "ACHIEVEMENT";
 type MintStep = 1 | 2 | 3;
@@ -30,6 +31,15 @@ const themeClasses: Record<CardTheme, string> = {
   sand: "from-[#F9F2E6] via-[#F2E7D6] to-[#ECDDCA] border-[#D7C2A9]",
 };
 
+function extractAddress(result: unknown): string | null {
+  if (typeof result === "string") return result;
+  if (result && typeof result === "object" && "address" in result) {
+    const addr = (result as { address: unknown }).address;
+    if (typeof addr === "string" && addr.length > 0) return addr;
+  }
+  return null;
+}
+
 function MintCertificateWizard() {
   const [step, setStep] = useState<MintStep>(1);
   const [txState, setTxState] = useState<TxState>("idle");
@@ -37,6 +47,7 @@ function MintCertificateWizard() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
   const [form, setForm] = useState<FormState>({
     title: "Best DeFi Project",
     description: "Awarded for building an innovative decentralized finance protocol.",
@@ -57,11 +68,13 @@ function MintCertificateWizard() {
     try {
       if (await isAllowed()) {
         const access = await requestAccess();
-        setWalletAddress(access);
+        const addr = extractAddress(access);
+        if (addr) setWalletAddress(addr);
       } else {
         await setAllowed();
         const access = await requestAccess();
-        setWalletAddress(access);
+        const addr = extractAddress(access);
+        if (addr) setWalletAddress(addr);
       }
     } catch (e) {
       console.error(e);
@@ -134,7 +147,7 @@ function MintCertificateWizard() {
       const contractId = process.env.NEXT_PUBLIC_NFT_CONTRACT_ID || "PLACEHOLDER";
       if (contractId === "PLACEHOLDER") throw new Error("NFT Contract ID not configured.");
 
-      const sourceAccount = await server.loadAccount(walletAddress);
+      const sourceAccount = await server.loadAccount(walletAddress!);
       const generatedTokenId = Math.floor(100000 + Math.random() * 900000); // 6 digit ID
       
       const contract = new Contract(contractId);
@@ -153,7 +166,7 @@ function MintCertificateWizard() {
       .setTimeout(30)
       .build();
 
-      const signedTx = await signTransaction(tx.toXDR(), { network: "TESTNET" });
+      await signTransaction(tx.toXDR(), { networkPassphrase: Networks.TESTNET });
       setTxState("submitted");
 
       // Mock the submission to horizon, as Freighter doesn't submit directly and horizon 
@@ -178,9 +191,10 @@ function MintCertificateWizard() {
       setTxHash(fakeHash);
       setTxState("success");
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMessage(err.message || "Transaction failed");
+      const message = err instanceof Error ? err.message : "Transaction failed";
+      setErrorMessage(message);
       setTxState("error");
     }
   }
@@ -408,7 +422,7 @@ function MintCertificateWizard() {
                 <>
                   <p className="text-sm font-semibold text-[#2F7D45]">✅ Freighter Connected</p>
                   <p className="mt-1 text-sm text-[#5A4D49] font-mono">
-                    {walletAddress.substring(0, 4)}...{walletAddress.substring(walletAddress.length - 4)}
+                    {`${walletAddress.substring(0, 4)}...${walletAddress.substring(walletAddress.length - 4)}`}
                   </p>
                 </>
               ) : (

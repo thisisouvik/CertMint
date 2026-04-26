@@ -24,7 +24,7 @@ function kycBadgeClasses(status: SidebarProps["kycStatus"]) {
   return "border-[#E9D6CD] bg-[#FFF8F4] text-[#5A4C47]";
 }
 
-export function MinterSidebar({ email, kycStatus }: SidebarProps) {
+export function MinterSidebar({ kycStatus }: SidebarProps) {
   return (
     <aside className="w-full shrink-0 border-b border-[#E7D4CA] bg-white/85 p-5 lg:w-72 lg:border-b-0 lg:border-r lg:bg-transparent lg:p-6">
       <nav className="grid gap-2">

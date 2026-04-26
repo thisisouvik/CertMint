@@ -1,27 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { isAllowed, setAllowed, requestAccess } from "@stellar/freighter-api";
+
+function extractAddress(result: unknown): string | null {
+  if (typeof result === "string") return result;
+  if (result && typeof result === "object" && "address" in result) {
+    const addr = (result as { address: unknown }).address;
+    if (typeof addr === "string" && addr.length > 0) return addr;
+  }
+  return null;
+}
 
 export function WalletConnect() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-
-  useEffect(() => {
-    // Optional: check if already connected on mount
-    // For simplicity, we just let the user click connect
-  }, []);
 
   async function handleConnect() {
     setIsConnecting(true);
     try {
       if (await isAllowed()) {
         const access = await requestAccess();
-        setWalletAddress(access);
+        const addr = extractAddress(access);
+        if (addr) setWalletAddress(addr);
       } else {
         await setAllowed();
         const access = await requestAccess();
-        setWalletAddress(access);
+        const addr = extractAddress(access);
+        if (addr) setWalletAddress(addr);
       }
     } catch (e) {
       console.error(e);

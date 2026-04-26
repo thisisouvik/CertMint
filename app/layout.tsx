@@ -20,9 +20,9 @@ const monoFont = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CertMint | NFT Certificate Verifier on Stellar",
+  title: "CertMint | NFT-backed Certificate Minter & Verifier on Stellar",
   description:
-    "CertMint verifies NFT-backed certificates on Stellar with public, tamper-aware authenticity checks.",
+    "CertMint  mints & verifies NFT-backed certificates on Stellar with public, tamper-aware authenticity checks.",
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",

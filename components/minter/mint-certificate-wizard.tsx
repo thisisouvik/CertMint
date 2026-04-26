@@ -62,23 +62,7 @@ function MintCertificateWizard() {
     return now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   }, []);
 
-  async function connectWallet() {
-    try {
-      if (await isAllowed()) {
-        const access = await requestAccess();
-        const addr = extractAddress(access);
-        if (addr) setWalletAddress(addr);
-      } else {
-        await setAllowed();
-        const access = await requestAccess();
-        const addr = extractAddress(access);
-        if (addr) setWalletAddress(addr);
-      }
-    } catch (e) {
-      console.error(e);
-      setErrorMessage("Freighter connection rejected or not installed.");
-    }
-  }
+
 
   function updateForm<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -117,16 +101,30 @@ function MintCertificateWizard() {
   }
 
   async function handleMint() {
-    if (txState === "waiting" || txState === "submitted") return;
-    if (!walletAddress) {
-      setErrorMessage("Please connect Freighter wallet first.");
-      return;
-    }
-
     setTxState("waiting");
     setTokenId(null);
     setTxHash(null);
     setErrorMessage(null);
+
+    let currentAddress = walletAddress;
+    try {
+      if (!currentAddress && await isAllowed()) {
+        const access = await requestAccess();
+        const addr = extractAddress(access);
+        if (addr) {
+          currentAddress = addr;
+          setWalletAddress(addr);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to check Freighter", e);
+    }
+
+    if (!currentAddress) {
+      setErrorMessage("Please connect your Freighter wallet using the top right button.");
+      setTxState("idle");
+      return;
+    }
 
     try {
       // Use Soroban RPC to simulate + build a properly assembled tx
@@ -139,13 +137,13 @@ function MintCertificateWizard() {
       if (contractId === "PLACEHOLDER") throw new Error("NFT Contract ID not configured.");
 
       // Load account via Soroban RPC
-      const sourceAccount = await sorobanServer.getAccount(walletAddress!);
+      const sourceAccount = await sorobanServer.getAccount(currentAddress!);
       const generatedTokenId = Math.floor(100000 + Math.random() * 900000);
 
       const contract = new Contract(contractId);
       const operation = contract.call(
         "mint",
-        nativeToScVal(walletAddress, { type: "address" }),
+        nativeToScVal(currentAddress, { type: "address" }),
         nativeToScVal(generatedTokenId, { type: "u64" }),
         nativeToScVal(form.certType, { type: "symbol" }),
         nativeToScVal(form.title, { type: "string" })
@@ -450,27 +448,7 @@ function MintCertificateWizard() {
               </div>
             </article>
 
-            <div className="mt-5 rounded-xl border border-[#E9D6CD] bg-[#FFF8F4] p-4">
-              {walletAddress ? (
-                <>
-                  <p className="text-sm font-semibold text-[#2F7D45]">✅ Freighter Connected</p>
-                  <p className="mt-1 text-sm text-[#5A4D49] font-mono">
-                    {`${walletAddress.substring(0, 4)}...${walletAddress.substring(walletAddress.length - 4)}`}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-semibold text-[#A54527]">❌ Wallet Not Connected</p>
-                  <button
-                    type="button"
-                    onClick={connectWallet}
-                    className="mt-2 inline-flex min-h-9 items-center justify-center rounded-lg bg-[#2D2220] px-4 text-xs font-semibold text-white transition hover:bg-[#4A3E3A]"
-                  >
-                    Connect Freighter
-                  </button>
-                </>
-              )}
-            </div>
+
             {errorMessage && (
               <div className="mt-3 rounded-lg border border-[#E7B6A0] bg-[#FFF1EA] p-3 text-xs text-[#8C3F1E]">
                 {errorMessage}

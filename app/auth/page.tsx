@@ -16,7 +16,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
   const nextPath = typeof resolved.next === "string" && resolved.next.startsWith("/") ? resolved.next : "/dashboard";
 
   return (
-    <main className="certmint-bg min-h-screen px-6 py-12 sm:px-10 lg:px-16">
+    <main className="certmint-bg min-h-screen px-4 py-10 sm:px-10 lg:px-16">
       <section className="mx-auto max-w-5xl rounded-[2rem] border border-[#EBD8CF] bg-white/90 p-7 shadow-[0_24px_52px_-34px_rgba(143,88,59,0.5)] backdrop-blur sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C55B34]">CertMint issuer access</p>
         <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-[#1A1211] sm:text-5xl">

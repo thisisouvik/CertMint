@@ -4,7 +4,7 @@ interface CertificateRow {
   token_id: number | null;
   title: string;
   cert_type: string | null;
-  owner_wallet: string;
+  issuer_wallet: string;
   is_revoked: boolean;
   created_at: string;
 }
@@ -14,7 +14,7 @@ export default async function AdminCertsPage() {
 
   const { data, error } = await supabase
     .from("certificates")
-    .select("token_id, title, cert_type, owner_wallet, is_revoked, created_at")
+    .select("token_id, title, cert_type, issuer_wallet, is_revoked, created_at")
     .order("created_at", { ascending: false })
     .limit(25)
     .returns<CertificateRow[]>();
@@ -40,7 +40,7 @@ export default async function AdminCertsPage() {
                 <th className="px-3 py-2">Token</th>
                 <th className="px-3 py-2">Title</th>
                 <th className="px-3 py-2">Type</th>
-                <th className="px-3 py-2">Owner</th>
+                <th className="px-3 py-2">Issuer</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Created</th>
               </tr>
@@ -51,7 +51,7 @@ export default async function AdminCertsPage() {
                   <td className="px-3 py-3">{cert.token_id ?? "-"}</td>
                   <td className="px-3 py-3">{cert.title}</td>
                   <td className="px-3 py-3 uppercase">{cert.cert_type ?? "-"}</td>
-                  <td className="px-3 py-3">{cert.owner_wallet}</td>
+                  <td className="px-3 py-3">{cert.issuer_wallet}</td>
                   <td className="px-3 py-3">{cert.is_revoked ? "Revoked" : "Active"}</td>
                   <td className="px-3 py-3">{new Date(cert.created_at).toLocaleDateString()}</td>
                 </tr>

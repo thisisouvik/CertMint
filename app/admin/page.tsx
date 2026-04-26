@@ -28,7 +28,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         .from("certificates")
         .select("id", { count: "exact", head: true })
         .gte("created_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
-      supabase.from("certificates").select("owner_wallet"),
+      supabase.from("certificates").select("issuer_wallet"),
       supabase
         .from("transactions")
         .select("tx_hash, action, status, created_at")
@@ -37,7 +37,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         .returns<TransactionRow[]>(),
     ]);
 
-  const walletCount = new Set((walletRows ?? []).map((row) => row.owner_wallet).filter(Boolean)).size;
+  const walletCount = new Set((walletRows ?? []).map((row) => row.issuer_wallet).filter(Boolean)).size;
 
   return (
     <section className="space-y-5">

@@ -42,3 +42,9 @@ yarn-error.log*
 next-env.d.ts
 
 /docs
+
+# rust/soroban build outputs
+/contracts/target/
+/contracts/target_cli/
+/contracts/**/target/
+/contracts/**/target_cli/

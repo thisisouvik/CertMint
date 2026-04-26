@@ -4,6 +4,7 @@ import { MinterSidebar } from "@/components/minter/sidebar";
 import { isAdminEmail } from "@/lib/auth/admin";
 import { getUserApproval } from "@/lib/auth/approval";
 import { createClient } from "@/lib/supabase/server";
+import { WalletConnect } from "@/components/wallet-connect";
 
 export default async function MinterLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const supabase = await createClient();
@@ -29,14 +30,17 @@ export default async function MinterLayout({ children }: Readonly<{ children: Re
           <h1 className="font-[family-name:var(--font-display)] text-2xl text-[#1A1211]">Minter Dashboard</h1>
           <p className="text-xs text-[#635854]">Signed in as {user.email}</p>
         </div>
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            className="inline-flex min-h-10 items-center justify-center rounded-full border border-[#D6BCAD] bg-white px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#362824] transition hover:bg-[#FFF8F4]"
-          >
-            Logout
-          </button>
-        </form>
+        <div className="flex items-center gap-4">
+          <WalletConnect />
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="inline-flex min-h-10 items-center justify-center rounded-full border border-[#D6BCAD] bg-white px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#362824] transition hover:bg-[#FFF8F4]"
+            >
+              Logout
+            </button>
+          </form>
+        </div>
       </header>
 
       <div className="flex flex-1 flex-col lg:flex-row">

@@ -23,6 +23,11 @@ export const metadata: Metadata = {
   title: "CertMint | NFT Certificate Verifier on Stellar",
   description:
     "CertMint verifies NFT-backed certificates on Stellar with public, tamper-aware authenticity checks.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

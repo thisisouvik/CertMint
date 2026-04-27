@@ -43,12 +43,10 @@ The project is focused on real certificate workflows, not generic task farming. 
 ### Landing
 
 ![Landing Web](assets/landing/landing-web.png)
-![Landing Mobile](assets/landing/landing-mob.png)
 
 ### Auth
 
 ![Signup Web](assets/landing/sighup-web.png)
-![Signup Mobile](assets/landing/sighup-mob.png)
 
 ### Minting And Management
 
@@ -61,6 +59,11 @@ The project is focused on real certificate workflows, not generic task farming. 
 
 ![Verify Certificate](assets/verify-certificate.png)
 ![Admin KYC Approve](assets/admin-kyc-approve.png)
+
+## 📱 Mobile Responsive View
+
+![Landing Mobile](assets/landing/landing-mob.png)
+![Signup Mobile](assets/landing/sighup-mob.png)
 
 ## 🧰 Tech Stack
 
@@ -113,6 +116,7 @@ E2E Test :
 Contract Test:
 
 ![Contract Verification Evidence](assets/testcase/contract-verify.png)
+![Contract Verification Evidence 2](assets/testcase/contracts-verify2.png)
 
 ## 🔐 Security And Transparency
 

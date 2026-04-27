@@ -52,3 +52,7 @@ impl VerifierContract {
         }
     }
 }
+
+#[cfg(test)]
+mod test;
+

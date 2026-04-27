@@ -139,3 +139,7 @@ impl NFTCertificateContract {
         env.storage().instance().get(&DataKey::TotalSupply).unwrap_or(0)
     }
 }
+
+#[cfg(test)]
+mod test;
+

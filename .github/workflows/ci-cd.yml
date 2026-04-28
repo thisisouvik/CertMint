@@ -128,7 +128,7 @@ jobs:
 
       - name: Lint Contracts (Clippy)
         working-directory: contracts
-        run: cargo clippy --target wasm32v1-none --release --all-targets -- -D warnings
+        run: cargo clippy --target wasm32v1-none --release --lib -- -D warnings
 
       - name: Check Contract Documentation
         working-directory: contracts

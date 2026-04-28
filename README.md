@@ -20,6 +20,10 @@
   <strong>Live Production:</strong> <a href="https://cert-mint.vercel.app" target="_blank">https://cert-mint.vercel.app</a>
 </p>
 
+<p align="center">
+  <strong>Youtube Demo Video :</strong> <a href="https://youtu.be/m4fN9fJSC18" target="_blank">https://youtu.be/m4fN9fJSC18</a>
+</p>
+
 ## ✨ About The Project
 
 CertMint is a certificate minting platform built on the Stellar network. It lets organizations mint, verify, and manage NFT-backed certificates with public proof, transaction history, and a clean reviewer-friendly audit trail.
@@ -34,13 +38,7 @@ The project is focused on real certificate workflows, not generic task farming. 
 - 📊 Admin views help track minting, logs, wallets, and system status.
 - 📱 The app is responsive for desktop and mobile review.
 
-## 🧠 What Was Wrong Before
-
-The earlier README framing did not match the actual product. CertMint is not a lending app, not a campaign fund platform, and not a generic task reputation system. It is a Web3 certificate minting and verification platform on Stellar.
-
-That is the product this README now documents.
-
-## ✨ Platform Features
+## 🖼️ Screenshots
 
 ### Landing
 

@@ -1,5 +1,7 @@
 import { requireAdminUser } from "@/lib/auth/admin-access";
 
+export const dynamic = 'force-dynamic';
+
 interface TxRow {
   tx_hash: string | null;
   action: string | null;

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { updateApprovalStatusAction } from "@/app/admin/actions";
 import { requireAdminUser } from "@/lib/auth/admin-access";
 
+export const dynamic = 'force-dynamic';
+
 type ApprovalStatus = "pending" | "approved" | "rejected";
 type ViewStatus = ApprovalStatus | "all";
 

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = 'force-dynamic';
+
 export default async function CertificateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const tokenId = parseInt(resolvedParams.id, 10);

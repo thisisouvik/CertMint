@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = 'force-dynamic';
+
 export default async function CollectionPage({ params }: { params: Promise<{ wallet: string }> }) {
   const resolvedParams = await params;
   const wallet = resolvedParams.wallet;

@@ -289,4 +289,5 @@ cargo test
 
 ## 🙌 Salutation
 
+Love doing this amazing project on stellar ecosystem! ❤️
 Built for verifiable credentials, public trust, and a cleaner certificate workflow on Stellar.

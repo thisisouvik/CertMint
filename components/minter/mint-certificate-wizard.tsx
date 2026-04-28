@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { isAllowed, requestAccess, signTransaction } from "@stellar/freighter-api";
-import { Networks, TransactionBuilder, Contract, nativeToScVal } from "@stellar/stellar-sdk";
+import { useIntegration } from "@/hooks/use-integration";
 
 type CertType = "HACKATHON" | "COURSE" | "EVENT" | "ACHIEVEMENT";
 type MintStep = 1 | 2 | 3;
@@ -30,14 +29,7 @@ const themeClasses: Record<CardTheme, string> = {
   sand: "from-[#F9F2E6] via-[#F2E7D6] to-[#ECDDCA] border-[#D7C2A9]",
 };
 
-function extractAddress(result: unknown): string | null {
-  if (typeof result === "string") return result;
-  if (result && typeof result === "object" && "address" in result) {
-    const addr = (result as { address: unknown }).address;
-    if (typeof addr === "string" && addr.length > 0) return addr;
-  }
-  return null;
-}
+
 
 function MintCertificateWizard() {
   const [step, setStep] = useState<MintStep>(1);
@@ -45,7 +37,7 @@ function MintCertificateWizard() {
   const [tokenId, setTokenId] = useState<number | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const { walletAddress, connectWallet, mintCertificateTx } = useIntegration();
 
   const [form, setForm] = useState<FormState>({
     title: "Best DeFi Project",
@@ -108,13 +100,8 @@ function MintCertificateWizard() {
 
     let currentAddress = walletAddress;
     try {
-      if (!currentAddress && await isAllowed()) {
-        const access = await requestAccess();
-        const addr = extractAddress(access);
-        if (addr) {
-          currentAddress = addr;
-          setWalletAddress(addr);
-        }
+      if (!currentAddress) {
+        currentAddress = await connectWallet();
       }
     } catch (e) {
       console.error("Failed to check Freighter", e);
@@ -127,86 +114,7 @@ function MintCertificateWizard() {
     }
 
     try {
-      // Use Soroban RPC to simulate + build a properly assembled tx
-      const { rpc: SorobanRpc, Transaction } = await import("@stellar/stellar-sdk");
-      const sorobanServer = new SorobanRpc.Server(
-        process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || "https://soroban-testnet.stellar.org"
-      );
-
-      const contractId = process.env.NEXT_PUBLIC_NFT_CONTRACT_ID || "PLACEHOLDER";
-      if (contractId === "PLACEHOLDER") throw new Error("NFT Contract ID not configured.");
-
-      // Load account via Soroban RPC
-      const sourceAccount = await sorobanServer.getAccount(currentAddress!);
-      const generatedTokenId = Math.floor(100000 + Math.random() * 900000);
-
-      const contract = new Contract(contractId);
-      const operation = contract.call(
-        "mint",
-        nativeToScVal(currentAddress, { type: "address" }),
-        nativeToScVal(generatedTokenId, { type: "u64" }),
-        nativeToScVal(form.certType, { type: "symbol" }),
-        nativeToScVal(form.title, { type: "string" })
-      );
-
-      const tx = new TransactionBuilder(sourceAccount, {
-        fee: "300",
-        networkPassphrase: Networks.TESTNET,
-      })
-        .addOperation(operation)
-        .setTimeout(60)
-        .build();
-
-      // Simulate to get the footprint (required for Soroban)
-      const simulation = await sorobanServer.simulateTransaction(tx);
-      if (SorobanRpc.Api.isSimulationError(simulation)) {
-        throw new Error(`Contract simulation failed: ${simulation.error}`);
-      }
-
-      // Assemble the final transaction with soroban data
-      const preparedTx = SorobanRpc.assembleTransaction(tx, simulation).build();
-
-      // Sign with Freighter
-      const signResult = await signTransaction(preparedTx.toXDR(), {
-        networkPassphrase: Networks.TESTNET,
-      });
-      
-      if (typeof signResult === "object" && "error" in signResult) {
-        throw new Error((signResult as { error?: string }).error || "User declined to sign the transaction.");
-      }
-      
-      const signedXdr =
-        typeof signResult === "string"
-          ? signResult
-          : (signResult as { signedTxXdr: string }).signedTxXdr;
-
-      setTxState("submitted");
-
-      // Submit to Stellar network
-      const submitResponse = await sorobanServer.sendTransaction(
-        new Transaction(signedXdr, Networks.TESTNET)
-      );
-
-      if (submitResponse.status === "ERROR") {
-        throw new Error(`On-chain submission failed: ${String(submitResponse.errorResult)}`);
-      }
-
-      // Poll for confirmation (up to 15s)
-      const realHash = submitResponse.hash;
-      let attempts = 0;
-      while (attempts < 8) {
-        await new Promise((r) => setTimeout(r, 2000));
-        const poll = await sorobanServer.getTransaction(realHash);
-        if (poll.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) break;
-        if (poll.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
-          let errorMsg = "Transaction failed on-chain.";
-          if (poll.resultMetaXdr) {
-            errorMsg += " Check Stellar Explorer for detailed contract execution error.";
-          }
-          throw new Error(errorMsg);
-        }
-        attempts++;
-      }
+      const { realHash, generatedTokenId, contractId } = await mintCertificateTx(currentAddress, form);
 
       // Save to Supabase with real on-chain hash
       const { saveMintedCertificateAction } = await import("@/app/(minter)/mint/actions");

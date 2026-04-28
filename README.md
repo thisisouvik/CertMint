@@ -242,6 +242,7 @@ Place the videos in your submission bundle or link them in the final report.
 | Level 3 | CI/CD running | ✅ |
 | Submission | Complete README with architecture | ✅ |
 | Submission | Contract addresses documented with links | ✅ |
+| Submission | Hooks folder with integration file added | ✅ |
 
 ## 🚀 Setup Guide
 

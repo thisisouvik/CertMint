@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getUserApproval } from "@/lib/auth/approval";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = 'force-dynamic';
+
 interface SearchParams {
   success?: string;
   error?: string;

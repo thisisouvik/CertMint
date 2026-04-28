@@ -1,5 +1,7 @@
 import { requireAdminUser } from "@/lib/auth/admin-access";
 
+export const dynamic = 'force-dynamic';
+
 interface CertificateRow {
   token_id: number | null;
   title: string;

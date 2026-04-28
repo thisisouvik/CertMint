@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = 'force-dynamic';
+
 interface CertificateRow {
   token_id: number;
   cert_type: string | null;

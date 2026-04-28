@@ -3,6 +3,8 @@ import MintCertificateWizard from "@/components/minter/mint-certificate-wizard";
 import { getUserApproval } from "@/lib/auth/approval";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = 'force-dynamic';
+
 export default async function MintPage() {
   const supabase = await createClient();
   const {

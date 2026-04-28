@@ -1,5 +1,7 @@
 import { requireAdminUser } from "@/lib/auth/admin-access";
 
+export const dynamic = 'force-dynamic';
+
 interface LogRow {
   action: string | null;
   performed_by: string | null;

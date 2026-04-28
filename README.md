@@ -135,6 +135,7 @@ CertMint is designed around public proof and controlled access.
 | Landing | Public product overview | Implemented |
 | Auth | Sign in / Sign up flow | Implemented |
 | Minting | Certificate mint wizard | Implemented |
+| Hooks | Shared wallet and mint integration logic | Added |
 | Verification | Search by certificate ID or TX hash | Implemented |
 | Admin | Logs, wallets, certs, tx pages | Implemented |
 | Campaigns | Manage Campaign nav item | Added |
@@ -172,6 +173,8 @@ app/
   auth/
   certificate/[id]/
   collection/[wallet]/
+hooks/
+  use-integration.ts
   verify/
 components/
   admin/
@@ -207,10 +210,13 @@ flowchart TD
 flowchart LR
   UI[Next.js UI] --> SA[Server Actions]
   UI --> W[Freighter Wallet]
+  UI --> HK[Shared Hooks]
   SA --> DB[Supabase]
   SA --> SC[Soroban Contracts]
   SC --> ST[Stellar Testnet]
   DB --> AD[Admin / Logs / Certificates]
+  HK --> W
+  HK --> SA
 ```
 
 ## 🎥 Video Proof Template

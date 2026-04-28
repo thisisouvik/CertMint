@@ -1,45 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { isAllowed, setAllowed, requestAccess } from "@stellar/freighter-api";
-
-function extractAddress(result: unknown): string | null {
-  if (typeof result === "string") return result;
-  if (result && typeof result === "object" && "address" in result) {
-    const addr = (result as { address: unknown }).address;
-    if (typeof addr === "string" && addr.length > 0) return addr;
-  }
-  return null;
-}
-
-type BalanceResult =
-  | { status: "ok"; amount: string }
-  | { status: "unfunded" }
-  | { status: "error" };
-
-async function fetchXlmBalance(address: string): Promise<BalanceResult> {
-  try {
-    const res = await fetch(
-      `https://horizon-testnet.stellar.org/accounts/${address}`,
-      { cache: "no-store" }
-    );
-    if (res.status === 404) return { status: "unfunded" };
-    if (!res.ok) return { status: "error" };
-    const data = await res.json();
-    const nativeBalance = (
-      data.balances as { asset_type: string; balance: string }[]
-    ).find((b) => b.asset_type === "native");
-    const amount = nativeBalance
-      ? parseFloat(nativeBalance.balance).toFixed(2)
-      : "0.00";
-    return { status: "ok", amount };
-  } catch {
-    return { status: "error" };
-  }
-}
+import { useIntegration, fetchXlmBalance, BalanceResult } from "@/hooks/use-integration";
 
 export function WalletConnect() {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const { walletAddress, connectWallet, disconnectWallet } = useIntegration();
   const [balance, setBalance] = useState<BalanceResult | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
@@ -79,26 +44,16 @@ export function WalletConnect() {
   async function handleConnect() {
     setIsConnecting(true);
     try {
-      if (await isAllowed()) {
-        const access = await requestAccess();
-        const addr = extractAddress(access);
-        if (addr) setWalletAddress(addr);
-      } else {
-        await setAllowed();
-        const access = await requestAccess();
-        const addr = extractAddress(access);
-        if (addr) setWalletAddress(addr);
-      }
+      await connectWallet();
     } catch (e) {
-      console.error(e);
-      alert("Freighter connection rejected or not installed.");
+      alert((e as Error).message);
     } finally {
       setIsConnecting(false);
     }
   }
 
   function handleDisconnect() {
-    setWalletAddress(null);
+    disconnectWallet();
     setBalance(null);
     setIsOpen(false);
   }

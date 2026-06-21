@@ -259,6 +259,22 @@ cd contracts
 cargo test
 ```
 
+### 5) Run with Docker (Recommended)
+
+Ensure you have **Docker** and **Docker Compose** installed, then follow these steps:
+
+1. **Configure environment variables** inside your `.env` file (copied from `.env.example`).
+2. **Build and start the container** using Docker Compose:
+   ```bash
+   docker compose up --build -d
+   ```
+   *Note: Next.js public environment variables (`NEXT_PUBLIC_*`) are read from `.env` and baked in at build time.*
+3. **Access the application** at `http://localhost:3000`.
+4. **Stop the container**:
+   ```bash
+   docker compose down
+   ```
+
 ## 🧭 Future Improvements
 
 - 📦 IPFS-backed image certificate storage

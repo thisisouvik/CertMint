@@ -39,6 +39,10 @@ function MintCertificateWizard() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { walletAddress, connectWallet, mintCertificateTx } = useIntegration();
 
+  const [workflowType, setWorkflowType] = useState<"standard" | "academic">("standard");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
+
   const [form, setForm] = useState<FormState>({
     title: "Best DeFi Project",
     description: "Awarded for building an innovative decentralized finance protocol.",
@@ -90,6 +94,34 @@ function MintCertificateWizard() {
     setTokenId(null);
     setTxHash(null);
     setErrorMessage(null);
+    setSubmittedId(null);
+    setIsSubmitting(false);
+  }
+
+  async function handleSubmitForApproval() {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setTxState("waiting");
+    try {
+      const { submitCertificateForApprovalAction } = await import("@/app/(minter)/mint/actions");
+      const result = await submitCertificateForApprovalAction({
+        title: form.title,
+        description: form.description,
+        certType: form.certType,
+        workflowType,
+      });
+
+      if (result.success) {
+        setSubmittedId(result.certId);
+        setTxState("success");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message || "Failed to submit for approval.");
+      setTxState("error");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function handleMint() {
@@ -195,6 +227,21 @@ function MintCertificateWizard() {
                     <option value="COURSE">Course</option>
                     <option value="EVENT">Event</option>
                     <option value="ACHIEVEMENT">Achievement</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold text-[#2C211D]" htmlFor="workflowType">
+                    Approval Workflow*
+                  </label>
+                  <select
+                    id="workflowType"
+                    value={workflowType}
+                    onChange={(event) => setWorkflowType(event.target.value as "standard" | "academic")}
+                    className="mt-2 w-full rounded-xl border border-[#DFC8BC] bg-white px-4 py-3 text-sm text-[#2D2220] outline-none focus:border-[#C55B34] focus:ring-2 focus:ring-[#F6D5C8]"
+                  >
+                    <option value="standard">Standard (Issuer → Admin Approval)</option>
+                    <option value="academic">Academic (Faculty → HOD → Registrar Approval)</option>
                   </select>
                 </div>
               </div>

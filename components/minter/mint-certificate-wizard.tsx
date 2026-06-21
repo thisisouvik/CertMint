@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useIntegration } from "@/hooks/use-integration";
 
 type CertType = "HACKATHON" | "COURSE" | "EVENT" | "ACHIEVEMENT";
 type MintStep = 1 | 2 | 3;
@@ -34,10 +33,7 @@ const themeClasses: Record<CardTheme, string> = {
 function MintCertificateWizard() {
   const [step, setStep] = useState<MintStep>(1);
   const [txState, setTxState] = useState<TxState>("idle");
-  const [tokenId, setTokenId] = useState<number | null>(null);
-  const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { walletAddress, connectWallet, mintCertificateTx } = useIntegration();
 
   const [workflowType, setWorkflowType] = useState<"standard" | "academic">("standard");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,8 +87,6 @@ function MintCertificateWizard() {
   function resetFlow() {
     setStep(1);
     setTxState("idle");
-    setTokenId(null);
-    setTxHash(null);
     setErrorMessage(null);
     setSubmittedId(null);
     setIsSubmitting(false);
@@ -115,59 +109,12 @@ function MintCertificateWizard() {
         setSubmittedId(result.certId);
         setTxState("success");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMessage(err.message || "Failed to submit for approval.");
+      setErrorMessage(err instanceof Error ? err.message : "Failed to submit for approval.");
       setTxState("error");
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  async function handleMint() {
-    setTxState("waiting");
-    setTokenId(null);
-    setTxHash(null);
-    setErrorMessage(null);
-
-    let currentAddress = walletAddress;
-    try {
-      if (!currentAddress) {
-        currentAddress = await connectWallet();
-      }
-    } catch (e) {
-      console.error("Failed to check Freighter", e);
-    }
-
-    if (!currentAddress) {
-      setErrorMessage("Please connect your Freighter wallet using the top right button.");
-      setTxState("idle");
-      return;
-    }
-
-    try {
-      const { realHash, generatedTokenId, contractId } = await mintCertificateTx(currentAddress, form);
-
-      // Save to Supabase with real on-chain hash
-      const { saveMintedCertificateAction } = await import("@/app/(minter)/mint/actions");
-      await saveMintedCertificateAction({
-        tokenId: generatedTokenId,
-        certType: form.certType,
-        title: form.title,
-        description: form.description,
-        txHash: realHash,
-        contractId,
-      });
-
-      setTokenId(generatedTokenId);
-      setTxHash(realHash);
-      setTxState("success");
-
-    } catch (err: unknown) {
-      console.error(err);
-      const message = err instanceof Error ? err.message : "Transaction failed";
-      setErrorMessage(message);
-      setTxState("error");
     }
   }
 

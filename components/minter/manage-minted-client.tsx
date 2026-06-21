@@ -77,9 +77,9 @@ export function ManageMintedClient({ mintedCerts, requests }: ManageMintedClient
 
       // Reload page to reflect updates
       window.location.reload();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setMintError(err.message || "Minting transaction failed.");
+      setMintError(err instanceof Error ? err.message : "Minting transaction failed.");
     } finally {
       setIsMinting(null);
     }

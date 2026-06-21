@@ -78,9 +78,9 @@ export function ApprovalsListClient({ pendingCerts, approvedCerts }: ApprovalsLi
 
       // reload page
       window.location.reload();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setMintError(err.message || "Minting failed.");
+      setMintError(err instanceof Error ? err.message : "Minting failed.");
     } finally {
       setIsMinting(null);
     }

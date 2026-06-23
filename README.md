@@ -85,7 +85,7 @@ The project is focused on real certificate workflows, not generic task farming. 
 
 | Contract | Contract ID | Verify Link | Status |
 |---|---|---|---|
-| NFT Certificate Contract | CCC732QGOBVC2MJEBHIS4RU57IGHJSWHBL6BHD2AXNUCNYBWA3PNL4WO | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCC732QGOBVC2MJEBHIS4RU57IGHJSWHBL6BHD2AXNUCNYBWA3PNL4WO) | Verified on testnet |
+| NFT Certificate Contract | CCBM2ZDOU3LUDVWNX6TV55YDLRH2EO6LXYL7SRXYI3HXT422MNSWJSUY | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCBM2ZDOU3LUDVWNX6TV55YDLRH2EO6LXYL7SRXYI3HXT422MNSWJSUY) | Verified on testnet |
 | Verifier Contract | CBUVPMCNQ33YITCLGQGPRXAMS3C3BYCBLREEXRIFVRJ5LUYJXJTM4NGA | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBUVPMCNQ33YITCLGQGPRXAMS3C3BYCBLREEXRIFVRJ5LUYJXJTM4NGA) | Verified on testnet |
 
 ### Deployment Notes
